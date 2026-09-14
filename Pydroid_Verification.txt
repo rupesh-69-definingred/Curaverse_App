@@ -1,0 +1,50 @@
+Curaverse Pydroid verification
+==============================
+- app.py Python syntax: PASS
+- CSS is contained inside Python triple-quoted HTML/CSS strings.
+- No 'width:27?0px' invalid CSS/Python fragment found.
+- requirements.txt includes Flask, Pillow, numpy, scikit-learn.
+- App starts on 0.0.0.0:5000.
+- Demo OTP: 123456
+
+Fix applied (this build):
+- In process_image(), a dead/no-op line
+  "seg[labels.reshape(arr.shape)] == 0"
+  (comparison instead of assignment, left over from earlier edits) was
+  removed. It had no effect on output but was leftover broken code.
+- Full route walkthrough tested end-to-end after the fix: OTP login,
+  Dashboard, Patients, Add Patient, Medical History, Symptoms,
+  Clinical Examination, Image Processing (real image upload +
+  K-Means K=3 segmentation), Reports, Appointments, Analytics,
+  Settings, Logout — all return correct responses with no errors.
+
+Note for Pydroid users:
+- If "pip install scikit-learn" fails/hangs on your device (common on
+  Android since it needs to build scipy), the app already has a
+  built-in fallback: it will run without scikit-learn using a simple
+  threshold-based 3-level split instead of real K-Means. In that case
+  you only need to install: Flask, Pillow, numpy.
+
+Fix applied (this build):
+- Removed the hard-coded demo patient ("Ananya Sharma" / CV-1023) that
+  used to be auto-inserted on first run. The app now starts with an
+  empty patient list; any patient added via "Add Patient" gets their
+  own Image Processing / Reports / Appointments workflow, not a fixed
+  one. If you had already run the app before and have an existing
+  patients.db with that demo patient in it, this build automatically
+  removes it on the next startup — no manual DB delete needed.
+
+Fix applied (Image Processing not working):
+- Large phone-camera photos (12MP+) were slow/risky to run K-Means on
+  directly on a phone. Uploaded images are now automatically resized
+  (longest side capped at 900px) and orientation-corrected before
+  processing — a 4000x3000 test photo now processes in ~2 seconds.
+- The uploaded original file is now re-saved as a real PNG (previously
+  a .jpg/.jpeg upload was stored with a .png filename without actually
+  being converted, which could stop the browser from displaying it).
+- If K-Means fails at runtime on a device (not just at import time),
+  the app now falls back to the simple threshold-based segmentation
+  instead of aborting the upload.
+- Upload failures (wrong file type, unreadable/corrupt image, or any
+  processing error) now show a clear on-screen error message on the
+  Image Processing page instead of silently doing nothing.
